@@ -16,7 +16,7 @@ class hiddenLayer:
         self.input = input
         # W 39x200
         if W is None:
-            WValue = np.array(rng.uniform(low=np.sqrt(6./(nIn+nOut)),high=np.sqrt(6./(nIn+nOut)),size=(nIn,nOut)),dtype=theano.config.floatX)
+            WValue = np.array(rng.uniform(low=-np.sqrt(6./(nIn+nOut)),high=np.sqrt(6./(nIn+nOut)),size=(nIn,nOut)),dtype=theano.config.floatX)
             if activation == theano.tensor.nnet.sigmoid:
                 WValue *= 4
             W = theano.shared(value=WValue,name="W",borrow=True)

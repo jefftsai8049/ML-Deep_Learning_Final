@@ -1,6 +1,7 @@
 __author__ = 'jefftsai'
 import os.path
 import numpy as np
+import random
 
 class preprocessing:
     def __init__(self):
@@ -36,6 +37,35 @@ class preprocessing:
             outFile.write(",".join(out)+"\n")
         dataFile.close()
         labelFile.close()
+        outFile.close()
+
+    def shuffleTrain(self, trainDataFileName, outFileName):
+        if not(os.path.isfile(trainDataFileName)):
+            print("Train data and file does not exist!\n")
+            return False
+
+        dataFile = open(trainDataFileName,"r")
+        outFile = open(outFileName,"w")
+
+        while 1:
+            if dataFile.read(1) == "":
+                break
+            else:
+                dataFile.seek(dataFile.tell()-1)
+
+            dataStr = []
+            for i in range(1000):
+                text = dataFile.readline()
+                if text == "":
+                    break
+                else:
+                    dataStr.append(text)
+            random.shuffle(dataStr)
+
+            for j in range(len(dataStr)):
+                outFile.write(dataStr[j])
+
+        dataFile.close()
         outFile.close()
 
     def loadTrainFile(self, trainFileName):
