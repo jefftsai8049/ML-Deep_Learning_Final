@@ -32,13 +32,13 @@ preproc.loadTrainFile(sortTrainFileName)
 preproc.load48Map(map48FileName)
 
 # Parameters Setting
-yita = 0.001
+learningRate = 0.001
 L1Reg = 0.00
 L2Reg = 0.0001
-epochs = 5
+epochs = 1
 batchSize = 1
 
-hiddenLayerSize = 200
+hiddenLayerSize = 128
 inputLayerSize = 39
 outputLayerSize = 48
 
@@ -48,12 +48,14 @@ y = T.imatrix("y")
 
 rng = np.random.RandomState(8888)
 
-
 classifier = mlp.mlp(rng = rng,input = x,nIn = inputLayerSize,nHidden = hiddenLayerSize,nOut = outputLayerSize)
 cost = classifier.cost(y)+L1Reg*classifier.L1+L2Reg*classifier.L2
-gradient = [T.grad(cost,parameters) for parameters in classifier.parameters]
-update = [(parameters,parameters-yita*gradient) for parameters,gradient in zip(classifier.parameters,gradient)]
+
 params = classifier.parameters
+gradient = [T.grad(cost,params) for params in classifier.parameters]
+
+update = [(params,params-learningRate*gradient) for params,gradient in zip(classifier.parameters,gradient)]
+
 trainModel = theano.function(inputs=[x,y],outputs=cost,updates=update)
 testModel = theano.function(inputs=[x,y],outputs=classifier.logisticRegressionLayer.p_y_given_x,on_unused_input="ignore")
 
@@ -65,7 +67,7 @@ for epoch in range(epochs):
     print("Epoch {}".format(epoch+1))
     while 1:
         trX,trY = preproc.loadTrainData(batchSize)
-        if i > 1120000:
+        if i > 112000:
             break
         modelCost = trainModel(trX,trY)
         if i%10000 == 0:
@@ -90,9 +92,10 @@ print("Time {}".format((end-start)/60.))
 # Predict
 preproc.loadTrainFile(sortTrainFileName)
 error = 0
-for i in range(1000):
+for i in range(10):
     trX,trY = preproc.loadTrainData(batchSize)
     answer = testModel(trX,trY)
-    if not (np.argmax(answer,1)[0] == np.argmax(trY,1)[0]):
-        error += 1
-print(error)
+    print(answer)
+#     if not (np.argmax(answer,1)[0] == np.argmax(trY,1)[0]):
+#         error += 1
+# print(error)

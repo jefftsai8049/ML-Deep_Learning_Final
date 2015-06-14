@@ -29,23 +29,24 @@ class hiddenLayer:
         self.b = b
 
         linOutput = T.dot(input,self.W)+self.b
-        self.output = (linOutput if activation is None
-                       else activation(linOutput))
+        self.output = activation(linOutput)
 
         self.parameters = [self.W,self.b]
 
 class mlp:
     def __init__(self,rng,input,nIn,nHidden,nOut):
         self.hiddenLayer = hiddenLayer(rng,input = input,nIn = nIn,nOut = nHidden,activation = T.tanh)
-        self.logisticRegressionLayer = LogisticRegression(input = self.hiddenLayer.output,n_in=nHidden,n_out=nOut)
+        self.hiddenLayer2 = hiddenLayer(rng,input = self.hiddenLayer.output,nIn = nHidden,nOut = nHidden,activation = T.tanh)
+        self.hiddenLayer3 = hiddenLayer(rng,input = self.hiddenLayer2.output,nIn = nHidden,nOut = nHidden,activation = T.tanh)
+        self.logisticRegressionLayer = LogisticRegression(input = self.hiddenLayer3.output,n_in=nHidden,n_out=nOut)
 
-        self.L1 = abs(self.hiddenLayer.W).sum() + abs(self.logisticRegressionLayer.W).sum()
-        self.L2 = (self.hiddenLayer.W**2).sum() + (self.logisticRegressionLayer.W**2).sum()
+        self.L1 = abs(self.hiddenLayer.W).sum() + abs(self.hiddenLayer2.W).sum() + abs(self.hiddenLayer3.W).sum() + abs(self.logisticRegressionLayer.W).sum()
+        self.L2 = (self.hiddenLayer.W**2).sum() + (self.hiddenLayer2.W**2).sum()+ (self.hiddenLayer3.W**2).sum() + (self.logisticRegressionLayer.W**2).sum()
 
         # self.cost = self.logisticRegressionLayer.negative_log_likelihood
-        self.cost = self.logisticRegressionLayer.negative_log_likelihood
-        self.error = self.logisticRegressionLayer.errors
-        self.parameters = self.hiddenLayer.parameters+self.logisticRegressionLayer.params
+        self.cost = self.logisticRegressionLayer.zeroOneLoss
+        # self.output = self.logisticRegressionLayer.output
+        self.parameters = self.hiddenLayer.parameters+self.hiddenLayer2.parameters+self.hiddenLayer3.parameters+self.logisticRegressionLayer.params
 
     def costFunction(self,y):
         return -T.sum((self.logisticRegressionLayer.y_pred-y)**2)
