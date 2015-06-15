@@ -12,7 +12,7 @@ import time
 import DNN
 
 # File Name Setting
-rawTrainDataFileName = "data/mfcc/train.ark"
+rawTrainDataFileName = "data/fbank/train.ark"
 rawTrainLabelFileName = "data/label/train.lab"
 sortTrainFileName = "data/out/train.csv"
 sortShuffleTrainFileName = "data/out/trainShuffle.csv"
@@ -33,9 +33,8 @@ if not os.path.isfile(map48FileName):
 if not os.path.isfile(sortShuffleTrainFileName):
     print("Train file does not exist!\n")
     print("Shuffling train file...\n")
+    preproc.load48Map(map48FileName)
     preproc.shuffleTrain(sortTrainFileName,sortShuffleTrainFileName)
-
-
 
 
 # Load Train Data and Map
@@ -43,13 +42,13 @@ preproc.loadTrainFile(sortShuffleTrainFileName)
 preproc.load48Map(map48FileName)
 
 # Parameters Setting
-learningRate = 0.0001
+learningRate = 0.001
 L1Reg = 0.00
 L2Reg = 0.0001
-epochs = 10
-batchSize = 1
+epochs = 200
+batchSize = 128
 
-layerNumber = [39,128,128,128,48]
+layerNumber = [69,128,48]
 # hiddenLayerSize = 128
 # inputLayerSize = 39
 # outputLayerSize = 48
@@ -59,13 +58,18 @@ x = T.dmatrix("x")
 y = T.dmatrix("y")
 
 model = DNN.mlp(x,y,layerNumber)
-cost = T.mean(T.nnet.categorical_crossentropy(model.outputLayer.yPred,y))
-gradient = [T.grad(cost,parameters) for parameters in model.parameters]
-update = [(parameters, parameters - learningRate * gradient) for parameters, gradient in zip(model.parameters, gradient)]
-yGivenX = model.outputLayer.yPred
+# cost = T.mean(T.nnet.categorical_crossentropy(model.outputLayer.yPred,y))
+cost = model.outputLayer.costFunction(y)
 
-trainModel = theano.function(inputs=[x,y],outputs=cost,updates=update,on_unused_input="warning")
-testModel = theano.function(inputs=[x],outputs=yGivenX,on_unused_input="ignore")
+# gradient = [T.grad(cost,parameters) for parameters in model.parameters]
+
+gradient = T.grad(cost,model.parameters)
+updates = [(parameters, parameters - learningRate * g) for parameters, g in zip(model.parameters, gradient)]
+
+yGivenX = model.predict(x)
+
+trainModel = theano.function(inputs=[x,y],outputs=cost,updates=updates,allow_input_downcast=True)
+testModel = theano.function(inputs=[x],outputs=yGivenX,allow_input_downcast=True)
 
 # classifier = mlp.mlp(rng = randomSeed,input = x,nIn = inputLayerSize,nHidden = hiddenLayerSize,nOut = outputLayerSize)
 # cost = classifier.cost(y)+L1Reg*classifier.L1+L2Reg*classifier.L2
@@ -86,16 +90,25 @@ for epoch in range(epochs):
     print("Epoch {}".format(epoch+1))
     while 1:
         trX,trY = preproc.loadTrainData(batchSize)
-        if i > 1120000:
+        if i > 1120000./batchSize:
             break
         modelCost = trainModel(trX,trY)
-        if i%10000 == 0:
-            print("Iteration {}  Cost {}".format(i,modelCost))
+        if i%1000 == 0:
+            print("Eopch {} Iteration {}  Cost {}".format(epoch,i,modelCost))
+            # print(model.outputLayer.W.get_value())
+        # if i%1000 == 0:
+            accuracy = 0.0
+            trX,trY = preproc.loadTrainData(batchSize)
+            answer = testModel(trX)
+            accuracy += np.sum(np.argmax(answer,1) == np.argmax(trY,1)) 
+            print("accuracy {}%".format(accuracy/batchSize*100.0))
+            # print(trX[0],answer[0])
+            # print(np.argmax(answer,1),np.argmax(trY,1))
         i += 1
     preproc.loadTrainFile(sortShuffleTrainFileName)
+    learningRate *= 0.99
 
-
-f = open("mlp.model","wb")
+f = open("mlp_gpu.model","wb")
 pickle.dump(model,f,protocol=pickle.HIGHEST_PROTOCOL)
 f.close()
 end = time.clock()
@@ -112,9 +125,13 @@ print("Time {}".format((end-start)/60.))
 preproc.loadTrainFile(sortShuffleTrainFileName)
 error = 0
 for i in range(1000):
-    trX,trY = preproc.loadTrainData(batchSize)
+    trX,trY = preproc.loadTrainData(1)
     answer = testModel(trX)
-    print(np.argmax(answer,1)[0],np.argmax(trY,1)[0])
+    # print(np.argmax(answer,1)[0],np.argmax(trY,1)[0])
+    if i == 0:
+        print(answer,trY)
+        print(answer[0][30],trY[0][3])
+        print(np.argmax(answer,1)[0],np.argmax(trY,1)[0])
     if not (np.argmax(answer,1)[0] == np.argmax(trY,1)[0]):
         error += 1
 print(error)

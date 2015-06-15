@@ -59,7 +59,9 @@ class preprocessing:
                 if text == "":
                     break
                 else:
-                    dataStr.append(text)
+                    data = text.split(",")
+                    data[1] = str(self.map[data[1]])
+                    dataStr.append(",".join(data))
             random.shuffle(dataStr)
 
             for j in range(len(dataStr)):
@@ -101,7 +103,7 @@ class preprocessing:
         y = []
         temp = [0]*48
         for i in range(len(labelList)):
-            labelList[i] = map[labelList[i]]
+            labelList[i] = int(labelList[i])
             temp[labelList[i]] = 1
             y.append(temp)
             temp = [0]*48
