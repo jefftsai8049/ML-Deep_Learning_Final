@@ -23,6 +23,9 @@ map48FileName = "data/out/map.csv"
 
 rawTestDataFileName = "data/fbank/test.ark"
 TestDataFileName = "data/out/test.csv"
+outTestResultFileName = "data/out/testPredict.csv"
+
+modelFileName = "model/mlp_2_57.model"
 
 
 # Data Preprocessing
@@ -72,7 +75,7 @@ x = T.matrix("x")
 y = T.matrix("y")
 
 # Load Model
-modelFileName = "mlp_2_57.model"
+
 if os.path.isfile(modelFileName):
     f = open(modelFileName,"rb")
     oldModel = pickle.load(f)
@@ -129,7 +132,7 @@ if not os.path.isfile(modelFileName):
 # Validation
 preproc.loadTrainFile(sortShuffleTrainFileName)
 error = 0
-testSamples = 5
+testSamples = 100
 for i in range(testSamples):
     trX,trY = preproc.loadTrainData(1)
     answer = testModel(trX)
@@ -140,14 +143,28 @@ print("Validate Accuracy",format(1-error/float(testSamples)))
 
 
 # Load test File
+
+print("Predicting test data...")
 preproc.loadTestFile(TestDataFileName)
-teX = preproc.loadTestData(10)
-i = 0
-# 166104
-while 1:
-    teX = preproc.loadTestData(1)
-    if np.size(teX) < 1:
-        answer = testModel(teX)
-    i+= 1
-    print(i)
-print("test ok")
+# teX = preproc.loadTestData(10)
+# i = 0
+# 166114
+
+outTestResultFile = open(outTestResultFileName,"w")
+teX = preproc.loadTestData(166114)
+answer = testModel(teX)
+name = []
+preproc.loadTestFile(TestDataFileName)
+for i in range(166114):
+
+    temp = preproc.loadTestSet(1)
+    name = temp[0][0]
+    outTestResultFile.write(name+",")
+    for j in range(len(answer[i])):
+        outTestResultFile.write(str(answer[i][j]))
+        if not (j == len(answer[i])-1):
+            outTestResultFile.write(",")
+        else:
+            outTestResultFile.write("\n")
+outTestResultFile.close()
+
