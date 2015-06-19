@@ -70,6 +70,38 @@ class preprocessing:
         dataFile.close()
         outFile.close()
 
+    def noShuffleTrain(self, trainDataFileName, outFileName):
+        if not(os.path.isfile(trainDataFileName)):
+            print("Train data and file does not exist!\n")
+            return False
+
+        dataFile = open(trainDataFileName,"r")
+        outFile = open(outFileName,"w")
+
+        while 1:
+            if dataFile.read(1) == "":
+                break
+            else:
+                dataFile.seek(dataFile.tell()-1)
+
+            dataStr = []
+            for i in range(1000):
+                text = dataFile.readline()
+                if text == "":
+                    break
+                else:
+                    data = text.split(",")
+                    data[1] = str(self.map[data[1]])
+                    dataStr.append(",".join(data))
+
+
+            for j in range(len(dataStr)):
+                outFile.write(dataStr[j])
+
+        dataFile.close()
+        outFile.close()
+
+
     def loadTrainFile(self, trainFileName):
         if not os.path.isfile(trainFileName):
             print("Train set file does not exist!\n")
@@ -166,3 +198,48 @@ class preprocessing:
             allSet.append(set)
         file.close()
         return allSet
+
+    def formatTestData(self,inFileName,outFileName):
+        if not os.path.isfile(inFileName):
+            print("Test raw file does not exist!\n")
+            return False
+        inFile = open(inFileName,"r")
+        outFile = open(outFileName,"w")
+        while 1:
+            inText = inFile.readline()
+            if inText == "":
+                break
+            inData = inText.split()
+            outFile.write(",".join(inData)+"\n")
+
+        inFile.close()
+        outFile.close()
+
+    def loadTestFile(self,inFile):
+        if not os.path.isfile(inFile):
+            print("Test set file does not exist!\n")
+            return False
+        self.testFile = open(inFile,"r")
+
+    def loadTestSet(self,inNumber):
+        testSet = []
+        for i in range(inNumber):
+            dataStr = self.testFile.readline()
+            if dataStr =="":
+                return testSet
+            dataStr = dataStr[:-1]
+            data = dataStr.split(",")
+            for i in range(len(data)-2):
+                data[i+1] = float(data[i+1])
+            testSet.append(data)
+        return testSet
+
+    def loadTestData(self,inNumber):
+        testSet = self.loadTestSet(inNumber)
+        teX = []
+        for i in range(len(testSet)):
+            if len(testSet[i]) > 0:
+                teX.append(testSet[i][1:])
+            else:
+                break
+        return np.asarray(teX,dtype=np.float64)

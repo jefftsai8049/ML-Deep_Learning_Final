@@ -5,20 +5,27 @@ import theano.tensor as T
 import theano
 
 class mlp:
-    def __init__(self,x,y,layerNumber):
+    def __init__(self,x,y,layerNumber,parameters = None):
         randomSeed = np.random.RandomState(8887)
-        self.inputLayer = hiddenLayer(randomSeed,x,layerNumber[0],layerNumber[1])
-        # self.hiddenLayer = hiddenLayer(randomSeed,self.inputLayer.z,layerNumber[1],layerNumber[2])
-        # self.hiddenLayer2 = hiddenLayer(randomSeed,self.hiddenLayer.z,layerNumber[2],layerNumber[3])
-        self.outputLayer = outputLayer(randomSeed,self.inputLayer.z,layerNumber[1],layerNumber[2])
+        if not parameters == None:
+            self.inputLayer = hiddenLayer(randomSeed,x,layerNumber[0],layerNumber[1],parameters[0],parameters[1])
+            self.hiddenLayer = hiddenLayer(randomSeed,self.inputLayer.z,layerNumber[1],layerNumber[2],parameters[2],parameters[3])
+            # self.hiddenLayer2 = hiddenLayer(randomSeed,self.hiddenLayer.z,layerNumber[2],layerNumber[3],parameters[4],parameters[5])
+            self.outputLayer = outputLayer(randomSeed,self.hiddenLayer.z,layerNumber[2],layerNumber[3],parameters[4],parameters[5])
+        else:
+            self.inputLayer = hiddenLayer(randomSeed,x,layerNumber[0],layerNumber[1])
+            self.hiddenLayer = hiddenLayer(randomSeed,self.inputLayer.z,layerNumber[1],layerNumber[2])
+            # self.hiddenLayer2 = hiddenLayer(randomSeed,self.hiddenLayer.z,layerNumber[2],layerNumber[3])
+            self.outputLayer = outputLayer(randomSeed,self.hiddenLayer.z,layerNumber[2],layerNumber[3])
 
-        # self.parameters = self.inputLayer.parameters+self.hiddenLayer.parameters+self.hiddenLayer2.parameters+self.outputLayer.parameters
-        self.parameters = self.inputLayer.parameters+self.outputLayer.parameters
+        self.parameters = self.inputLayer.parameters+self.hiddenLayer.parameters+self.outputLayer.parameters
+        # self.parameters = self.inputLayer.parameters+self.hiddenLayer.parameters+self.outputLayer.parameters
+
     def predict(self,x):
         self.inputLayer.predict(x)
-        # self.hiddenLayer.predict(self.inputLayer.z)
+        self.hiddenLayer.predict(self.inputLayer.z)
         # self.hiddenLayer2.predict(self.hiddenLayer.z)
-        self.outputLayer.predict(self.inputLayer.z)
+        self.outputLayer.predict(self.hiddenLayer.z)
 
         return self.outputLayer.yPred
 
