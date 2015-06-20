@@ -243,3 +243,75 @@ class preprocessing:
             else:
                 break
         return np.asarray(teX,dtype=np.float64)
+
+    def generatingSequence(self, inFileName, outFileName):
+        if not os.path.isfile(inFileName):
+            print("No train file!")
+            return
+        else:
+            inFile = open(inFileName,"r")
+            outFile = open(outFileName,"w")
+
+            sequenceLength = 0
+            oldname = "faem0"
+            oldVoice = "sil1392"
+            while 1:
+                inText = inFile.readline()
+                if inText is "":
+                    outFile.write(str(sequenceLength)+"\n")
+                    print(sequenceLength)
+                    break
+                inData = inText.split(",")
+                [name,voice,step] = inData[0].split("_")
+                if (name == oldname) and (voice == oldVoice):
+                    sequenceLength += 1
+                else:
+                    if sequenceLength != 0:
+                        outFile.write(str(sequenceLength)+"\n")
+                        print(sequenceLength)
+                    sequenceLength = 1
+                oldname = name
+                oldVoice = voice
+
+        inFile.close()
+        outFile.close()
+
+
+    def loadSequenceData(self,inFileName):
+        if not os.path.isfile(inFileName):
+            print("No sequence file!")
+            return
+        else:
+            inFile = open(inFileName,"r")
+            sequence = []
+            while 1:
+                inText = inFile.readline()
+                if inText == "":
+                    break
+                inData = int(inText)
+                sequence.append(inData)
+            return sequence
+        inFile.close
+
+    def testPredictTransfer2Label(self,inFileName,outFileName):
+        if not os.path.isfile(inFileName):
+            print("No test predict file name!")
+            return
+        else:
+            inFile = open(inFileName,"r")
+            outFile = open(outFileName,"w")
+            while 1:
+                inText = inFile.readline()
+                if inText == "":
+                    break
+                inData = inText.split(",")[1:]
+                name = inText.split(",")[0]
+                val = []
+                for i in range(len(inData)):
+                    val.append(float(inData[i]))
+
+                print(val.index(max(val)))
+                outFile.write(name+","+str(val.index(max(val)))+"\n")
+            inFile.close()
+            outFile.close()
+

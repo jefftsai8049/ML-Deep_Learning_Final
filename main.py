@@ -10,6 +10,7 @@ import time
 
 
 import DNN
+import RNN
 
 # File Name Setting
 rawTrainDataFileName = "data/fbank/train.ark"
@@ -24,6 +25,7 @@ map48FileName = "data/out/map.csv"
 rawTestDataFileName = "data/fbank/test.ark"
 TestDataFileName = "data/out/test.csv"
 outTestResultFileName = "data/out/testPredict.csv"
+outTestLabelFileName = "data/out/testPredictLabel.csv"
 
 modelFileName = "model/mlp_2_57.model"
 
@@ -60,8 +62,6 @@ preproc.load48Map(map48FileName)
 
 # Parameters Setting
 learningRate = 0.001
-L1Reg = 0.00
-L2Reg = 0.0001
 epochs = 400
 batchSize = 128
 
@@ -143,28 +143,43 @@ print("Validate Accuracy",format(1-error/float(testSamples)))
 
 
 # Load test File
+if not os.path.isfile(outTestResultFileName):
+    print("Predicting test data...")
+    preproc.loadTestFile(TestDataFileName)
+    # teX = preproc.loadTestData(10)
+    # i = 0
+    # 166114
 
-print("Predicting test data...")
-preproc.loadTestFile(TestDataFileName)
-# teX = preproc.loadTestData(10)
-# i = 0
-# 166114
+    outTestResultFile = open(outTestResultFileName,"w")
+    teX = preproc.loadTestData(166114)
+    answer = testModel(teX)
+    name = []
+    preproc.loadTestFile(TestDataFileName)
+    for i in range(166114):
 
-outTestResultFile = open(outTestResultFileName,"w")
-teX = preproc.loadTestData(166114)
-answer = testModel(teX)
-name = []
-preproc.loadTestFile(TestDataFileName)
-for i in range(166114):
+        temp = preproc.loadTestSet(1)
+        name = temp[0][0]
+        outTestResultFile.write(name+",")
+        for j in range(len(answer[i])):
+            outTestResultFile.write(str(answer[i][j]))
+            if not (j == len(answer[i])-1):
+                outTestResultFile.write(",")
+            else:
+                outTestResultFile.write("\n")
+    outTestResultFile.close()
 
-    temp = preproc.loadTestSet(1)
-    name = temp[0][0]
-    outTestResultFile.write(name+",")
-    for j in range(len(answer[i])):
-        outTestResultFile.write(str(answer[i][j]))
-        if not (j == len(answer[i])-1):
-            outTestResultFile.write(",")
-        else:
-            outTestResultFile.write("\n")
-outTestResultFile.close()
+if not os.path.isfile(outTestLabelFileName):
+    print("Transfer to Label...")
+    preproc.testPredictTransfer2Label(outTestResultFileName,outTestLabelFileName)
+
+
+# model = DNN.mlp(x,y,layerNumber)
+# cost = model.outputLayer.costFunction(y)
+# gradient = T.grad(cost,model.parameters)
+# updates = [(parameters, parameters - learningRate * g) for parameters, g in zip(model.parameters, gradient)]
+# yGivenX = model.predict(x)
+#
+# trainModel = theano.function(inputs=[x,y],outputs=cost,updates=updates,allow_input_downcast=True,on_unused_input='warn')
+# testModel = theano.function(inputs=[x],outputs=yGivenX,allow_input_downcast=True,on_unused_input='warn')
+
 
